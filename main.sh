@@ -32,10 +32,8 @@ if [ ! -f "$CABOCHA_OUTPUT_FILE" ]; then
 fi
 
 
-#perl cabocha_extractor.pl output.txt
-#perl cabocha_extractor_upgraded.pl output.txt
+
 perl cabocha_extractor_upgraded.pl < "$CABOCHA_OUTPUT_FILE"
-#rm output.txt
 rm "$CABOCHA_OUTPUT_FILE"
 
 # the following comments were added by gemini 2.5 flash but i thought they were hilarious

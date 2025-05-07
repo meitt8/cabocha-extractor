@@ -12,12 +12,13 @@ my $output_dir_prefix = "output/";
 
 # Open the raw MeCab output file in append mode
 open my $fh0, '>>:encoding(UTF-8)', $output_dir_prefix . "00_mecab.txt" or die "Cannot open ${output_dir_prefix}00_mecab.txt: $!";
-#open(FILE_0, "+>>:utf8", $output_dir_prefix . "00_mecab.txt") or die "Cannot open " . $output_dir_prefix . "00_mecab.txt: $!";
 
 while (<>) {
+    # Skip empty lines or lines containing only whitespace
+    next if /^\s*$/;
+
     my @final_output;
 
-#    utf8::decode($_);ac
     my $input = $_;
     $input =~ tr/\!/！/;
     $input =~ tr/\?/？/;
@@ -26,7 +27,6 @@ while (<>) {
     push(@final_output, $input);
 
     #mecab trick.
-
     my @input_lemmas;
     my @found_interjections;
     my @input_lemma_no_emo;
@@ -36,22 +36,12 @@ while (<>) {
     my @input_lemmapos;
     my @raw_mecab_output_sentence; # store raw MeCab output for the current sentence
 
-#    my $mecab = MeCab::Tagger->new("-Ochasen");
     my $mecab = MeCab::Tagger->new("-d /usr/lib/x86_64-linux-gnu/mecab/dic/mecab-ipadic-neologd");
     my $node = $mecab->parseToNode($input_mecab);
     for( ; $node; $node = $node->{next} ) {
         next unless defined $node->{surface};
-#        my $midasi = $node->{surface};
-#        my( $hinsi, $kijutsu, $genkei ) = (split( /,/, $node->{feature} ))[0,1,6];
-#
-#        # Capture the raw MeCab output for this node (surface + feature)
-#        # MeCab node format is usually "surface\tfeature" or "surface feature" depending on options
-#        # The feature string already contains commas, so we'll use the node's feature directly
-#        push @raw_mecab_output_sentence, $midasi . "\t" . $node->{feature};
-#
-#        push (@input_tokens, $midasi);
 
-    # MeCab::Tagger returned bytes in EUC-JP; decode to Perl’s internal form
+    # decode to Perl’s internal form
     my $midasi_raw    = $node->{surface};
     my $feature_raw   = $node->{feature};
 
@@ -76,8 +66,7 @@ while (<>) {
         push (@input_lemmapos, $genkei.'|'.$hinsi);
 }
 
-# Append the raw MeCab output for the current sentence to FILE_0
-#print FILE_0 join("\n", @raw_mecab_output_sentence), "\nEOS\n";
+# Append the raw MeCab output for the current sentence to fh0 (file 0)
 print $fh0 join("\n", @raw_mecab_output_sentence), "\nEOS\n";
 
 # The original script removes the first and last tokens/lemmas/pos.

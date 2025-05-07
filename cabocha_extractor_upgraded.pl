@@ -23,6 +23,8 @@ my @input_tokenNER;
 my @input_lemmaNER;
 
 while (<>) {
+        # Skip empty lines or lines containing only whitespace
+    next if /^\s*$/;
 #    utf8::decode($_);
     my $input = $_;
 
