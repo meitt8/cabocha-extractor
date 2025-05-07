@@ -7,6 +7,9 @@ use MeCab;
 binmode(STDOUT, ":utf8");
 binmode(STDIN, ":utf8");
 
+# Open the raw MeCab output file in append mode
+open(FILE_0, "+>>00_mecab.txt") or die "Cannot open 00_mecab.txt: $!";
+
 while (<>) {
 utf8::decode($_);
 my $input = $_;
@@ -25,28 +28,40 @@ my @input_tokens;
 my @input_pos;
 my @input_tokenpos;
 my @input_lemmapos;
+my @raw_mecab_output_sentence; # store raw MeCab output for the current sentence
 
-
-my $mecab = MeCab::Tagger->new();#"-d/usr/lib/mecab/dic/ipadic");
+#my $mecab = MeCab::Tagger->new();#"-d/usr/lib/mecab/dic/ipadic");
+my $mecab = MeCab::Tagger->new("-d /usr/lib/x86_64-linux-gnu/mecab/dic/mecab-ipadic-neologd");
 my $node = $mecab->parseToNode($input_mecab);
 for( ; $node; $node = $node->{next} ) {
 	next unless defined $node->{surface};
 	my $midasi = $node->{surface};
 	my( $hinsi, $kijutsu, $genkei ) = (split( /,/, $node->{feature} ))[0,1,6];
+
+    # Capture the raw MeCab output for this node (surface + feature)
+    # MeCab node format is usually "surface\tfeature" or "surface feature" depending on options
+    # The feature string already contains commas, so we'll use the node's feature directly
+    push @raw_mecab_output_sentence, $midasi . "\t" . $node->{feature};
+
 	push (@input_tokens, $midasi);
 	if ($genkei eq '*'){
 		$genkei = $midasi;
-		# push (@input_lemmas, $genkei);
 	} 
-	# else {
-		# push (@input_lemmas, $genkei);
-	# }
+
 	push (@input_lemmas, $genkei);
 	push (@input_pos, $hinsi);
 	push (@input_tokenpos, $midasi.'|'.$hinsi);
 	push (@input_lemmapos, $genkei.'|'.$hinsi);
 }
 
+# Append the raw MeCab output for the current sentence to FILE_0
+print FILE_0 join("\n", @raw_mecab_output_sentence), "\nEOS\n";
+
+# The original script removes the first and last tokens/lemmas/pos.
+# This is usually to remove the BOS (Beginning of Sentence) and EOS (End of Sentence)
+# nodes that MeCab adds. We captured the raw output *including* BOS/EOS above,
+# but the subsequent processing in this script (and likely the next ones)
+# expects them removed, so we keep this part.
 shift @input_tokens; pop @input_tokens;
 shift @input_lemmas; pop @input_lemmas;
 shift @input_pos; pop @input_pos;
@@ -79,5 +94,8 @@ open(FILE_5, "+>>05_lemmaPOS.txt") or die "Cannot open $file: $!";
 print FILE_5 "$input_lemmapos"."\n";
 close FILE_5;
 }
+
+# Close the raw MeCab output file after processing all sentences
+close FILE_0;
 
 __END__
