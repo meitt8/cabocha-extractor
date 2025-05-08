@@ -40,7 +40,7 @@ fi
 echo "--- cabocha finished ---"
 wait
 
-# Check if cabocha produced output (optional, but good practice)
+# Check if cabocha produced output
 if [ ! -f "$CABOCHA_OUTPUT_FILE" ]; then
     echo "Error: Cabocha output file '$CABOCHA_OUTPUT_FILE' was not created."
     exit 1
